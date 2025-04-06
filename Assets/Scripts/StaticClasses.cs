@@ -20,12 +20,11 @@ public static class MiniMax {
             totalIterations++;
             HelperFunction.CommitMove(board, move, isX);
 
-            int score;
+            int score = HelperFunction.EvaluateMove(board, move);
             if (HelperFunction.IsGameOver(board, move)) {
-                score = 10;
-                HelperFunction.UndoMove(board, move);
+                score += 100;
             } else {
-                score = Beta(board, !isX, 1, ref totalIterations, alpha, beta, maxDepth);
+                score += Beta(board, !isX, 1, ref totalIterations, alpha, beta, maxDepth);
             }
 
             if (score > bestScore) {
@@ -53,11 +52,11 @@ public static class MiniMax {
             totalIterations++;
             HelperFunction.CommitMove(board, move, isX);
 
-            int score;
+            int score = HelperFunction.EvaluateMove(board, move);
             if (HelperFunction.IsGameOver(board, move)) {
-                score = 10 - depth;
+                score += 100 - depth * 10;
             } else {
-                score = Beta(board, !isX, depth + 1, ref totalIterations, alpha, beta, maxDepth);
+                score += Beta(board, !isX, depth + 1, ref totalIterations, alpha, beta, maxDepth);
             }
 
             bestScore = Math.Max(bestScore, score);
@@ -82,11 +81,11 @@ public static class MiniMax {
             totalIterations++;
             HelperFunction.CommitMove(board, move, isX);
 
-            int score;
+            int score = -HelperFunction.EvaluateMove(board, move);
             if (HelperFunction.IsGameOver(board, move)) {
-                score = -10 + depth;
+                score += -100 + depth * 10;
             } else {
-                score = Alpha(board, !isX, depth + 1, ref totalIterations, alpha, beta, maxDepth);
+                score += Alpha(board, !isX, depth + 1, ref totalIterations, alpha, beta, maxDepth);
             }
 
             bestScore = Math.Min(bestScore, score);
@@ -102,6 +101,38 @@ public static class MiniMax {
 }
 
 public static class HelperFunction {
+    public static int EvaluateMove(int[,] board, int x) {
+        int addScore = 0;
+
+        int y = HelperFunction.GetDropSquare(board, x);
+
+        int[] centerWeightsX = { 3, 4, 5, 7, 5, 4, 3 };
+        int[] centerWeightsY = { 3, 4, 5, 5, 4, 3 };
+
+        int xAdd = centerWeightsX[x];
+        int yAdd = 0;
+        if (y >= 0 && y < 6) {
+            yAdd = centerWeightsY[y];
+        }
+
+        addScore += xAdd + yAdd;
+
+        int longestRow = GetLongestRow(board, x);
+        
+        int[] lengthWeights = { 0, 2, 4, 8, 10};
+
+        int lengthAdd = 0;
+        if (longestRow >= 0 && longestRow < 5) {
+            lengthAdd = lengthWeights[longestRow];
+        }
+
+        addScore += lengthAdd;
+
+
+        return addScore;
+    }
+
+
     public static int GetDropSquare(int[,] board, int x) {
         int rows = board.GetLength(0);
 
@@ -145,8 +176,14 @@ public static class HelperFunction {
     static readonly List<(int, int)> directionMap = new List<(int, int)> {(1, 0), (0, 1), (1, 1), (1, -1)};
 
     public static bool IsGameOver(int[,] board, int x) {
+        if (GetLongestRow(board, x) >= 4) return true;
+        else return false;
+    }
+
+    public static int GetLongestRow(int[,] board, int x) {
         int y = GetDropSquare(board, x) + 1;
         int player = board[y, x];
+        int longestRow = 0;
 
         foreach (var (i, j) in directionMap) {
             int count = 1;
@@ -154,11 +191,11 @@ public static class HelperFunction {
             count += CountInDirection(board, y, x, i, j, player);
             count += CountInDirection(board, y, x, -i, -j, player);
 
-            if (count >= 4) return true;
+            longestRow = Math.Max(count, longestRow);
         }
            
-        return false;
-    }
+        return longestRow;
+    } 
 
     private static int CountInDirection(int[,] board, int startY, int startX, int dy, int dx, int player) {
         int newY = startY + dy;
@@ -187,7 +224,7 @@ public static void ShowBoard(int[,] board)
         string row = "| ";
         for (int j = 0; j < board.GetLength(1); j++)
         {
-            string player = board[i, j] == 0 ? "." : board[i, j] == 1 ? "X" : "O";
+            string player = board[i, j] == 0 ? ".." : board[i, j] == 1 ? "+1" : "-1";
             row += $" {player} ";
         }
         row += " |";

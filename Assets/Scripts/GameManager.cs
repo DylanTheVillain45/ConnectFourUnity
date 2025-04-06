@@ -37,13 +37,19 @@ public class GameManager : MonoBehaviour
     }
 
     public void SetUpBoard() {
-        if (CalculatedVals[0] != null) {
+        if (CalculatedVals != null && CalculatedVals[0] != null) {
             foreach (TextMeshProUGUI text in CalculatedVals) {
                 Destroy(text.gameObject);
             }
         }
+        if (tiles != null && tiles[0, 0] != null) {
+            foreach (Tile tile in tiles) {
+                Destroy(tile.gameObject);
+            }
+        }
 
         DepthText.text = maxDepth.ToString();
+        ResultText.text = "";
 
         isRed = true;
         isGameOver = false;
@@ -93,7 +99,9 @@ public class GameManager : MonoBehaviour
             }
 
             board[y, x] = this.isRed ? 1 : -1;
-            // HelperFunction.ShowBoard(board);
+            if (board[y, x] == 0) {
+                Debug.LogError("bug here ");
+            }
 
             List<int> moves = HelperFunction.GetMoves(board);
 
@@ -124,11 +132,16 @@ public class GameManager : MonoBehaviour
         var (bestMoveX, totalIterations, ScoreMap) = MiniMax.GetBestMove(board, isRed, maxDepth);
         int bestMoveY = HelperFunction.GetDropSquare(board, bestMoveX);
 
-        Debug.Log(bestMoveY + " " + bestMoveX);
-        if (board[bestMoveY, bestMoveX] != 0) {
-            AiMove = (bestMoveY, bestMoveX);
+        // Debug.Log(bestMoveY + "-" + bestMoveX);
+        // HelperFunction.ShowBoard(board);
+
+        if (board[bestMoveY, bestMoveX] == 0) {
+            if (tiles[bestMoveY, bestMoveX].isOccupied == false) {
+                AiMove = (bestMoveY, bestMoveX);
+            } else {
+                Debug.LogError("tile is occupied");
+            }
         } else {
-            Debug.Log("hello");
             Debug.LogError("AI MOVE IS OBSTRUCTED");
         }
 
@@ -176,8 +189,8 @@ public class GameManager : MonoBehaviour
     }
 
     public void SetMaxDepth(float depth) {
-        DepthText.text = maxDepth.ToString();
         maxDepth = (int)depth;
+        DepthText.text = maxDepth.ToString();
     }
 
     public void SetNextAi(bool isOn) {
